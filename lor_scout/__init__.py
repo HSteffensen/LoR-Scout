@@ -1,9 +1,16 @@
+import logging
 import os
 from pathlib import Path
 from datetime import timedelta
 
 from pyot.core import Settings
 
+_LOGGER = logging.getLogger("lor_scout")
+_STDERR_HANDLER = logging.StreamHandler()
+_STDERR_HANDLER.setLevel(logging.DEBUG)
+_STDERR_FORMAT = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")
+_STDERR_HANDLER.setFormatter(_STDERR_FORMAT)
+_LOGGER.addHandler(_STDERR_HANDLER)
 
 _API_KEY = os.environ.get("RIOT_API_KEY")
 if not _API_KEY:
