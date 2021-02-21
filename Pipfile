@@ -5,7 +5,8 @@ name = "pypi"
 
 [packages]
 lor-deckcodes = "*"
-pantheon = "*"
+pyot = "*"
+pandas = "*"
 
 [dev-packages]
 black = "==20.8b1" # black has no non-beta releases yet
