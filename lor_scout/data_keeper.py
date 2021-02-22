@@ -5,7 +5,7 @@ Phase 2: Cloud storage
 """
 
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import pandas
 from pyot.models.lor import Match
@@ -36,7 +36,22 @@ class DataKeeperLocal:
         self.dataframe.to_csv(path)
 
 
-class PlayerKeeperLocal(DataKeeperLocal):
+class PlayerKeeper:
+    def store_player(
+        self,
+        puuid: str,
+        last_ranked_match_time: Optional[pandas.Timestamp],
+        last_check_time: pandas.Timestamp,
+    ) -> None:
+        raise NotImplementedError()
+
+    def discover_player(
+        self, puuid: str, discovered_match_time: pandas.Timestamp
+    ) -> None:
+        raise NotImplementedError()
+
+
+class PlayerKeeperLocal(DataKeeperLocal, PlayerKeeper):
     def __init__(self, type: str):
         type = type.lower()
         valid_types = ("all", "recent")
@@ -57,7 +72,7 @@ class PlayerKeeperLocal(DataKeeperLocal):
     def store_player(
         self,
         puuid: str,
-        last_ranked_match_time: pandas.Timestamp,
+        last_ranked_match_time: Optional[pandas.Timestamp],
         last_check_time: pandas.Timestamp,
     ):
         self.update(
@@ -68,6 +83,14 @@ class PlayerKeeperLocal(DataKeeperLocal):
         self.update(
             players_dataframe_row(puuid, discovered_match_time, None), overwrite=False
         )
+
+
+class MatchKeeper:
+    def store_match(self, match: Match):
+        raise NotImplementedError()
+
+    def store_match_id(self, match_id: str):
+        raise NotImplementedError()
 
 
 class MatchKeeperLocal(DataKeeperLocal):
@@ -124,8 +147,8 @@ RECENT_PLAYERS = PlayerKeeperLocal("recent")
 
 def players_dataframe_row(
     puuid: str,
-    last_ranked_match_time: pandas.Timestamp,
-    last_check_time: pandas.Timestamp,
+    last_ranked_match_time: Optional[pandas.Timestamp],
+    last_check_time: Optional[pandas.Timestamp],
 ):
     return pandas.DataFrame(
         data=[[puuid, last_ranked_match_time, last_check_time]],
@@ -135,11 +158,11 @@ def players_dataframe_row(
 
 def matches_dataframe_row(
     match_id: str,
-    game_start_time_utc: pandas.Timestamp,
-    game_version: str,
-    decks: List[str],
-    winner_deck: str,
-    first_attacker_deck: str,
+    game_start_time_utc: Optional[pandas.Timestamp],
+    game_version: Optional[str],
+    decks: Optional[List[str]],
+    winner_deck: Optional[str],
+    first_attacker_deck: Optional[str],
 ):
     return pandas.DataFrame(
         data=[
