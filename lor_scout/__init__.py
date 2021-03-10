@@ -24,7 +24,7 @@ Settings(
             "BACKEND": "pyot.stores.Omnistone",
             "EXPIRATIONS": {
                 "match_v1_matchlist": timedelta(hours=1),
-                "match_v1_match": timedelta(days=10000),
+                "match_v1_match": timedelta(days=28),
             },
         },
         {
@@ -36,7 +36,7 @@ Settings(
                 "account_v1_active_shard": timedelta(days=1),
                 "ranked_v1_leaderboards": timedelta(hours=1),
                 "match_v1_matchlist": timedelta(hours=23),
-                "match_v1_match": timedelta(days=10000),
+                "match_v1_match": timedelta(days=56),
             },
         },
         {"BACKEND": "pyot.stores.DDragon"},

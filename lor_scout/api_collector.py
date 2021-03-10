@@ -28,9 +28,9 @@ def puuids_to_collect_from(
     now = Timestamp.utcnow()
     run_since = now - not_updated_since
     players = data_keeper.RECENT_PLAYERS.dataframe
-    players_to_update = players[
+    players_to_update = players.where(
         players.last_check_time.isnull() | (players.last_check_time < run_since)
-    ].sort_values(by="last_ranked_match_time", ascending=False)
+    ).sort_values(by="last_ranked_match_time", ascending=False)
     LOGGER.debug(
         f"{len(players_to_update.index)} of {len(players.index)} recent players "
         f"have not been updated in the past {not_updated_since}"

@@ -4,10 +4,12 @@ Phase 1: Storing locally
 Phase 2: Cloud storage
 """
 
+from ast import literal_eval
 from pathlib import Path
 from typing import List, Optional
 
 import pandas
+from pandas.core.frame import DataFrame
 from pyot.models.lor import Match
 
 _DATA_FOLDER = Path("long_term_data")
@@ -86,6 +88,8 @@ class PlayerKeeperLocal(DataKeeperLocal, PlayerKeeper):
 
 
 class MatchKeeper:
+    dataframe: DataFrame
+
     def store_match(self, match: Match):
         raise NotImplementedError()
 
@@ -108,6 +112,7 @@ class MatchKeeperLocal(DataKeeperLocal):
             "parse_dates": ["game_start_time_utc"],
         }
         super().__init__(f"{type}_matches", read_csv_kwargs)
+        self.dataframe.decks = self.dataframe.decks.apply(literal_eval)
 
     def store_match(self, match: Match):
         decks = [player.deck_code for player in match.info.players]
