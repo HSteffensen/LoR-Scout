@@ -6,7 +6,7 @@ Phase 2: Cloud storage
 
 from ast import literal_eval
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pandas
 from pandas.core.frame import DataFrame
@@ -97,12 +97,12 @@ class MatchKeeper:
         raise NotImplementedError()
 
 
-class MatchKeeperLocal(DataKeeperLocal):
+class MatchKeeperLocal(DataKeeperLocal, MatchKeeper):
     def __init__(self, type: str):
-        type = type.lower()
-        valid_types = ("all", "recent")
-        if type not in valid_types:
-            raise ValueError(f"Invalid type: {type}")
+        # type = type.lower()
+        # valid_types = ("all", "recent")
+        # if type not in valid_types:
+        #     raise ValueError(f"Invalid type: {type}")
 
         read_csv_kwargs = {
             "index_col": "match_id",
@@ -112,16 +112,19 @@ class MatchKeeperLocal(DataKeeperLocal):
             "parse_dates": ["game_start_time_utc"],
         }
         super().__init__(f"{type}_matches", read_csv_kwargs)
-        self.dataframe.decks = self.dataframe.decks.apply(literal_eval)
+        # self.dataframe.players = self.dataframe.players.apply(literal_eval) # todo: uncomment
 
     def store_match(self, match: Match):
-        decks = [player.deck_code for player in match.info.players]
+        players = [
+            {"puuid": player.puuid, "deck_code": player.deck_code}
+            for player in match.info.players
+        ]
         self.update(
             matches_dataframe_row(
                 str(match.id),
                 pandas.to_datetime(match.info.creation),
                 match.info.version,
-                decks,
+                players,
                 next(player.deck_code for player in match.info.players if player.win),
                 next(
                     player.deck_code
@@ -165,7 +168,7 @@ def matches_dataframe_row(
     match_id: str,
     game_start_time_utc: Optional[pandas.Timestamp],
     game_version: Optional[str],
-    decks: Optional[List[str]],
+    players: Optional[List[Dict[str, str]]],
     winner_deck: Optional[str],
     first_attacker_deck: Optional[str],
 ):
@@ -175,7 +178,7 @@ def matches_dataframe_row(
                 match_id,
                 game_start_time_utc,
                 game_version,
-                decks,
+                players,
                 winner_deck,
                 first_attacker_deck,
             ]
@@ -184,8 +187,29 @@ def matches_dataframe_row(
             "match_id",
             "game_start_time_utc",
             "game_version",
-            "decks",
+            "players",
             "winner_deck",
             "first_attacker_deck",
         ],
     ).set_index("match_id")
+
+
+async def update_old_matches_to_new():
+    new_keeper = MatchKeeperLocal("new")
+    for match_row in ALL_MATCHES.dataframe.reset_index().itertuples(index=True):
+        match_id = match_row.match_id
+        if match_id in new_keeper.dataframe.index:
+            continue
+        print(f"updating match_id='{match_id}'")
+        match = Match(id=match_id)
+        match = await match.get()
+        new_keeper.store_match(match)
+        new_keeper.save()
+    new_keeper.save()
+
+
+"""
+import lor_scout
+from pyot.utils import loop_run
+loop_run(lor_scout.data_keeper.update_old_matches_to_new())
+"""
